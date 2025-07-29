@@ -3,9 +3,28 @@ import torch
 from torchvision import transforms
 from PIL import Image
 
+# Set Streamlit page configuration for aesthetics
+st.set_page_config(
+    page_title="Crop Doctor",
+    page_icon="🌿",
+    layout="wide"
+)
+
+# Custom theme styling (this can also be placed in .streamlit/config.toml if deploying)
+st.markdown(
+    """
+    <style>
+    .main {background-color: #F5F5F5;}
+    .stButton>button {background-color:#4CAF50; color:white;}
+    .stFileUploader {border: 2px solid #4CAF50;}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Define your class names directly here
+# Class names for predictions
 class_names = [
     'Apple__Apple_scab', 'Apple_Black_rot', 'Apple_Cedar_apple_rust', 'Apple_healthy',
     'Blueberry_healthy', "Cherry(including_sour)Powdery_mildew", "Cherry(including_sour)healthy",
@@ -43,15 +62,65 @@ transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-st.title("Crop Doctor - Disease Prediction")
-uploaded_file = st.file_uploader("Upload a crop image", type=['jpg', 'png', 'jpeg'])
+# Sidebar with instructions
+with st.sidebar:
+    st.title("🌾 Crop Doctor")
+    st.info("""
+        **How to use:**
+        - Upload a clear, close-up image of a plant leaf.
+        - Wait for the model to analyze and predict the disease (or health).
+        - Results and help appear on this page instantly!
 
-if uploaded_file:
-    image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Uploaded Image", use_column_width=True)
-    input_tensor = transform(image).unsqueeze(0).to(device)
-    with torch.no_grad():
-        outputs = model(input_tensor)
-        _, predicted = torch.max(outputs, 1)
-        result = class_names[predicted.item()]
-    st.success(f"Prediction: {result}")
+        ---
+        _AI disease prediction for farmers and researchers._
+    """)
+
+# Main title and subtitle
+st.markdown("<h1 style='color:#388e3c;'>🌱 Crop Disease Predictor</h1>", unsafe_allow_html=True)
+st.markdown("<h4 style='color:#666'>Empowering Farmers with AI — by Swapnil Bind</h4>", unsafe_allow_html=True)
+st.markdown("""
+<div style='background-color:#E8F5E9; padding: 20px; border-radius: 10px; margin-bottom: 25px;'>
+    Upload a <b>clear image of a plant leaf</b> below to <span style='color:#388e3c;'>get a diagnosis with a single click!</span>
+</div>
+""", unsafe_allow_html=True)
+
+# Feature: file uploader
+uploaded_file = st.file_uploader("Choose a JPG or PNG image", type=['jpg', 'jpeg', 'png'])
+
+# Columns for image/result display and details
+col1, col2 = st.columns([1, 2])
+with col1:
+    if uploaded_file:
+        image = Image.open(uploaded_file).convert("RGB")
+        st.image(image, caption="Uploaded Image", use_column_width=True, output_format="PNG")
+with col2:
+    if uploaded_file:
+        input_tensor = transform(image).unsqueeze(0).to(device)
+        with torch.no_grad():
+            outputs = model(input_tensor)
+            _, predicted = torch.max(outputs, 1)
+            result = class_names[predicted.item()]
+        # Animated/confetti feedback
+        if "healthy" in result.lower():
+            st.success(f"🌟 **Prediction:** {result} (Your plant is healthy!)")
+            st.balloons()
+        else:
+            st.error(f"⚠️ **Prediction:** {result} (A disease was detected!)")
+            st.markdown("""
+            <span style='color:#c62828;'>It's advised to take action—search remedies for this disease or consult an expert.</span>
+            """, unsafe_allow_html=True)
+
+# Expander for extra info
+with st.expander("ℹ️ How does this app work?"):
+    st.markdown("""
+        - This app uses a Vision Transformer (ViT) deep learning model trained on 38 different plant diseases and healthy categories.
+        - Input images are resized, normalized, and analyzed automatically for best prediction accuracy.
+        - No user data is stored—everything runs locally in your session or securely on Streamlit Cloud.
+    """)
+
+# Footer
+st.markdown("<hr style='border:2px solid #4CAF50; margin-top:40px;'>", unsafe_allow_html=True)
+st.markdown(
+    "<div style='text-align:center; color:gray;'>Made by Swapnil Bind &nbsp; | &nbsp; Powered by Streamlit</div>",
+    unsafe_allow_html=True
+)
