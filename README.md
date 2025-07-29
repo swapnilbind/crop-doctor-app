@@ -29,7 +29,7 @@ Diagnose crop diseases from leaf images using a state-of-the-art Vision Transfor
 
 ## 🖼️ Demo Screenshot
 
-![App Demo](Screenshot2025-07-29152740.png)
+![App Demo](demo-image.png)
 
 ---
 
